@@ -63,11 +63,11 @@ export function FolderItem({
         
         <div className="flex items-center gap-2 flex-1 min-w-0" onClick={onToggle}>
           {isExpanded ? (
-            <FolderOpen className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <FolderOpen className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           ) : (
-            <Folder className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Folder className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           )}
-          <span className="text-sm font-medium truncate">{name}</span>
+          <span className="text-sm truncate">{name}</span>
           <span className="text-xs text-muted-foreground ml-auto">{noteCount}</span>
         </div>
 
@@ -76,7 +76,7 @@ export function FolderItem({
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+              className="h-5 w-5 opacity-0 group-hover:opacity-100"
               data-testid={`button-menu-${name}`}
             >
               <MoreHorizontal className="h-3 w-3" />
@@ -98,7 +98,7 @@ export function FolderItem({
       </div>
       
       {isExpanded && children && (
-        <div className="mt-1">{children}</div>
+        <div className="mt-0.5">{children}</div>
       )}
     </div>
   );

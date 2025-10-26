@@ -37,7 +37,7 @@ export function FolderItem({
     <div>
       <div
         className={cn(
-          'group flex items-center gap-1 px-2 py-1.5 rounded-md cursor-pointer hover-elevate',
+          'group flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer hover-elevate',
           showMenu && 'bg-accent'
         )}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
@@ -98,7 +98,7 @@ export function FolderItem({
       </div>
       
       {isExpanded && children && (
-        <div className="mt-0.5">{children}</div>
+        <div>{children}</div>
       )}
     </div>
   );

@@ -44,7 +44,7 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[calc(100vh-8rem)] p-8',
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-[calc(100vh-8rem)] p-8 leading-relaxed',
       },
     },
   });
@@ -187,7 +187,7 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
       </div>
       
       <div className="flex-1 overflow-auto">
-        <EditorContent editor={editor} />
+        <EditorContent editor={editor} className="[&_.ProseMirror]:leading-relaxed [&_.ProseMirror_p]:my-2 [&_.ProseMirror_h1]:mt-4 [&_.ProseMirror_h1]:mb-2 [&_.ProseMirror_h2]:mt-3 [&_.ProseMirror_h2]:mb-2 [&_.ProseMirror_h3]:mt-3 [&_.ProseMirror_h3]:mb-1 [&_.ProseMirror_ul]:my-2 [&_.ProseMirror_ol]:my-2 [&_.ProseMirror_li]:my-0" />
       </div>
     </div>
   );

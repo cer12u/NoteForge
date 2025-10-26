@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Calendar, Plus, Search, Star, FileText, FolderPlus, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import {
   Sidebar,
   SidebarContent,
@@ -60,13 +60,13 @@ export function AppSidebar({
   onToggleFolder,
 }: AppSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterTab, setFilterTab] = useState<'all' | 'starred'>('all');
 
   const filteredNotes = notes.filter((note) => {
-    const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterTab === 'all' || (filterTab === 'starred' && note.isStarred);
-    return matchesSearch && matchesFilter;
+    return note.title.toLowerCase().includes(searchQuery.toLowerCase());
   });
+
+  const starredNotes = filteredNotes.filter((note) => note.isStarred);
+  const regularNotes = filteredNotes.filter((note) => !note.isStarred);
 
   const renderNotesInFolder = (folderId: string | null, level: number = 0) => {
     const folderNotes = filteredNotes.filter((note) => note.folderId === folderId);
@@ -162,22 +162,32 @@ export function AppSidebar({
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <div className="px-4 py-2">
-              <Tabs value={filterTab} onValueChange={(v) => setFilterTab(v as 'all' | 'starred')}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="all" className="flex-1" data-testid="tab-all">
-                    すべて
-                  </TabsTrigger>
-                  <TabsTrigger value="starred" className="flex-1 gap-1" data-testid="tab-starred">
-                    <Star className="h-3 w-3" />
-                    お気に入り
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-
             <SidebarMenu>
-              <div className="px-2 space-y-1">
+              <div className="px-2">
+                {starredNotes.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-2 px-2 py-2 text-xs font-medium text-muted-foreground">
+                      <Star className="h-3 w-3" />
+                      お気に入り
+                    </div>
+                    {starredNotes.map((note) => (
+                      <NoteListItem
+                        key={note.id}
+                        id={note.id}
+                        title={note.title}
+                        updatedAt={note.updatedAt}
+                        isStarred={note.isStarred}
+                        isActive={note.id === activeNoteId}
+                        onSelect={() => onSelectNote(note.id)}
+                        onToggleStar={() => onToggleStar(note.id)}
+                      />
+                    ))}
+                    <Separator className="my-2" />
+                  </>
+                )}
+                <div className="flex items-center gap-2 px-2 py-2 text-xs font-medium text-muted-foreground">
+                  すべてのノート
+                </div>
                 {renderNotesInFolder(null)}
               </div>
             </SidebarMenu>

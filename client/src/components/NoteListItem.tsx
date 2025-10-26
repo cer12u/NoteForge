@@ -23,7 +23,7 @@ export function NoteListItem({
   return (
     <div
       className={cn(
-        'group flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover-elevate',
+        'group flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover-elevate',
         isActive && 'bg-accent'
       )}
       onClick={onSelect}

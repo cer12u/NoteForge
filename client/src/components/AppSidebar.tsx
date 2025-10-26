@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Plus, Search, Star, FileText, FolderPlus, File } from 'lucide-react';
+import { Calendar, Plus, Search, Star, FileText, FolderPlus, File, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -60,6 +60,8 @@ export function AppSidebar({
   onToggleFolder,
 }: AppSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [starredExpanded, setStarredExpanded] = useState(true);
+  const [allNotesExpanded, setAllNotesExpanded] = useState(true);
 
   const filteredNotes = notes.filter((note) => {
     return note.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -166,11 +168,16 @@ export function AppSidebar({
               <div className="px-2">
                 {starredNotes.length > 0 && (
                   <>
-                    <div className="flex items-center gap-2 px-2 py-2 text-xs font-medium text-muted-foreground">
+                    <div 
+                      className="flex items-center gap-1 px-2 py-2 text-xs font-medium text-muted-foreground cursor-pointer hover-elevate rounded-md"
+                      onClick={() => setStarredExpanded(!starredExpanded)}
+                      data-testid="section-starred"
+                    >
+                      <ChevronRight className={`h-3 w-3 transition-transform ${starredExpanded ? 'rotate-90' : ''}`} />
                       <Star className="h-3 w-3" />
                       お気に入り
                     </div>
-                    {starredNotes.map((note) => (
+                    {starredExpanded && starredNotes.map((note) => (
                       <NoteListItem
                         key={note.id}
                         id={note.id}
@@ -185,10 +192,15 @@ export function AppSidebar({
                     <Separator className="my-2" />
                   </>
                 )}
-                <div className="flex items-center gap-2 px-2 py-2 text-xs font-medium text-muted-foreground">
+                <div 
+                  className="flex items-center gap-1 px-2 py-2 text-xs font-medium text-muted-foreground cursor-pointer hover-elevate rounded-md"
+                  onClick={() => setAllNotesExpanded(!allNotesExpanded)}
+                  data-testid="section-all-notes"
+                >
+                  <ChevronRight className={`h-3 w-3 transition-transform ${allNotesExpanded ? 'rotate-90' : ''}`} />
                   すべてのノート
                 </div>
-                {renderNotesInFolder(null)}
+                {allNotesExpanded && renderNotesInFolder(null)}
               </div>
             </SidebarMenu>
           </SidebarGroupContent>

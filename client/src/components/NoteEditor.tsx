@@ -44,7 +44,7 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[calc(100vh-8rem)] p-8 leading-relaxed',
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-full p-8 leading-snug',
       },
     },
   });
@@ -54,8 +54,8 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-1 px-4 py-2 border-b bg-background sticky top-0 z-10">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex items-center gap-1 px-4 py-2 border-b bg-background shrink-0">
         <Button
           size="icon"
           variant="ghost"
@@ -187,7 +187,7 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
       </div>
       
       <div className="flex-1 overflow-auto">
-        <EditorContent editor={editor} className="[&_.ProseMirror]:leading-relaxed [&_.ProseMirror_p]:my-2 [&_.ProseMirror_h1]:mt-4 [&_.ProseMirror_h1]:mb-2 [&_.ProseMirror_h2]:mt-3 [&_.ProseMirror_h2]:mb-2 [&_.ProseMirror_h3]:mt-3 [&_.ProseMirror_h3]:mb-1 [&_.ProseMirror_ul]:my-2 [&_.ProseMirror_ol]:my-2 [&_.ProseMirror_li]:my-0" />
+        <EditorContent editor={editor} className="[&_.ProseMirror]:leading-snug [&_.ProseMirror_p]:my-1 [&_.ProseMirror_h1]:mt-3 [&_.ProseMirror_h1]:mb-1.5 [&_.ProseMirror_h2]:mt-2.5 [&_.ProseMirror_h2]:mb-1 [&_.ProseMirror_h3]:mt-2 [&_.ProseMirror_h3]:mb-1 [&_.ProseMirror_ul]:my-1 [&_.ProseMirror_ol]:my-1 [&_.ProseMirror_li]:my-0" />
       </div>
     </div>
   );

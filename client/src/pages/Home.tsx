@@ -139,8 +139,8 @@ export default function Home() {
   };
 
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
+    <SidebarProvider defaultOpen={true} style={style as React.CSSProperties}>
+      <div className="flex h-screen w-full overflow-hidden">
         <AppSidebar
           notes={notes}
           folders={folders}
@@ -153,18 +153,18 @@ export default function Home() {
           onToggleFolder={handleToggleFolder}
         />
         
-        <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between px-4 py-2 border-b bg-background">
-            <div className="flex items-center gap-2">
+        <div className="flex flex-col flex-1 min-w-0">
+          <header className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               {activeNote && (
-                <h1 className="text-lg font-semibold">{activeNote.title}</h1>
+                <h1 className="text-lg font-semibold truncate">{activeNote.title}</h1>
               )}
             </div>
             <ThemeToggle />
           </header>
           
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 min-h-0">
             {activeNote ? (
               <NoteEditor
                 key={activeNote.id}

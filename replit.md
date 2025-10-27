@@ -9,12 +9,17 @@ NoteMark is an Obsidian-style markdown note-taking application built with React 
 **Markdown Native Implementation**
 - Switched from HTML storage to native Markdown storage to preserve original Markdown syntax
 - Implemented three view modes:
-  1. **Edit Mode**: Full Markdown source view with syntax highlighting
-  2. **Hybrid Mode (Obsidian-style)**: Current line shows Markdown source, other lines show formatted preview
-  3. **Preview Mode**: Full formatted Markdown preview
-- Used `marked` library for inline Markdown parsing in hybrid mode
+  1. **Edit Mode**: Full Markdown source view in textarea
+  2. **Hybrid Mode (Obsidian-style)**: Cursor line shows Markdown source (e.g., `**bold**`), other lines show formatted preview (e.g., **bold**)
+  3. **Preview Mode**: Full formatted Markdown preview (read-only)
+- Hybrid mode implementation:
+  - Background layer: Displays formatted Markdown using `marked.parse()` for non-cursor lines, raw Markdown for cursor line
+  - Foreground layer: Transparent textarea overlays background for input
+  - Cursor line highlighted with accent background
+- Used `marked` library for full Markdown parsing in hybrid mode (supports headings, lists, bold, italic, etc.)
 - Used `react-markdown` with `remark-gfm` for preview mode rendering
 - Toolbar button cycles through all three modes (Edit → Hybrid → Preview → Edit)
+- Removed unwanted click behavior from preview mode
 
 ## User Preferences
 

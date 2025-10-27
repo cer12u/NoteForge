@@ -10,6 +10,7 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { NoteListItem } from './NoteListItem';
 import { FolderItem } from './FolderItem';
@@ -146,6 +147,8 @@ export function AppSidebar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <SidebarTrigger data-testid="button-sidebar-toggle-menu" />
         </div>
 
         <div className="relative">

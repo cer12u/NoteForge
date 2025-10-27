@@ -4,6 +4,18 @@
 
 NoteMark is an Obsidian-style markdown note-taking application built with React and Express. The application provides a distraction-free, productivity-focused interface for creating, organizing, and managing markdown notes with features like folder organization, favorites, and real-time preview capabilities.
 
+## Recent Changes (October 27, 2025)
+
+**Markdown Native Implementation**
+- Switched from HTML storage to native Markdown storage to preserve original Markdown syntax
+- Implemented three view modes:
+  1. **Edit Mode**: Full Markdown source view with syntax highlighting
+  2. **Hybrid Mode (Obsidian-style)**: Current line shows Markdown source, other lines show formatted preview
+  3. **Preview Mode**: Full formatted Markdown preview
+- Used `marked` library for inline Markdown parsing in hybrid mode
+- Used `react-markdown` with `remark-gfm` for preview mode rendering
+- Toolbar button cycles through all three modes (Edit → Hybrid → Preview → Edit)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -35,10 +47,14 @@ Preferred communication style: Simple, everyday language.
 - Custom hooks for theme management and mobile detection
 
 **Editor Implementation**
-- TipTap rich text editor with markdown extensions
-- Support for multiple view modes: edit, preview, and hybrid
-- Extensions for color, highlight, placeholder, and text styling
-- ReactMarkdown with remark-gfm for rendering markdown in preview mode
+- Native Markdown editor with three view modes:
+  - **Edit Mode**: Full Markdown source editing in textarea
+  - **Hybrid Mode**: Obsidian-style editing where cursor line shows Markdown source, other lines show formatted preview
+  - **Preview Mode**: Read-only formatted Markdown preview
+- `marked` library for inline Markdown to HTML conversion (hybrid mode)
+- `react-markdown` with `remark-gfm` for full document rendering (preview mode)
+- Markdown toolbar with formatting buttons (bold, italic, headings, lists, etc.)
+- Data stored as native Markdown text (not HTML) to preserve original syntax
 
 **Typography System**
 - Primary font: Inter or SF Pro Text (system fonts via Google Fonts CDN)
@@ -103,9 +119,9 @@ Preferred communication style: Simple, everyday language.
 - lucide-react: Icon system
 
 **Editor & Markdown**
-- @tiptap/react + extensions: Rich text editing framework
-- react-markdown: Markdown rendering
-- remark-gfm: GitHub Flavored Markdown support
+- marked: Markdown parser and compiler for inline rendering
+- react-markdown: Markdown rendering for full document preview
+- remark-gfm: GitHub Flavored Markdown support (tables, task lists, strikethrough)
 
 **Data & State Management**
 - @tanstack/react-query: Async state management

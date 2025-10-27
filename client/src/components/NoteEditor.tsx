@@ -139,8 +139,8 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
                 className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2' : ''}`}
               >
                 {isCursorLine ? (
-                  // カーソル行は空白で表示（前景のtextareaで表示される）
-                  <span className="opacity-0 whitespace-pre-wrap font-mono">{line || '\u00A0'}</span>
+                  // カーソル行はMarkdown原文を表示
+                  <span className="whitespace-pre-wrap font-mono text-foreground">{line || '\u00A0'}</span>
                 ) : (
                   // 他の行はmarkedでHTMLに変換して表示
                   <div 

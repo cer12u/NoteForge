@@ -125,6 +125,19 @@ function markdownToHtml(markdown: string): string {
   return html;
 }
 
+// コンテンツからタイトルを抽出
+function extractTitle(html: string): string {
+  // h1タグから抽出
+  const h1Match = html.match(/<h1>(.*?)<\/h1>/);
+  if (h1Match) return h1Match[1];
+  
+  // pタグの最初の行から抽出
+  const pMatch = html.match(/<p>(.*?)<\/p>/);
+  if (pMatch) return pMatch[1].substring(0, 50);
+  
+  return '無題';
+}
+
 export function NoteEditor({ content, onChange, placeholder = 'メモを入力...' }: NoteEditorProps) {
   const [showMarkdown, setShowMarkdown] = useState(false);
   const [markdownContent, setMarkdownContent] = useState('');

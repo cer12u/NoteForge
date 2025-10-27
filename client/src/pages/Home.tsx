@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { NoteEditor } from '@/components/NoteEditor';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { FileText } from 'lucide-react';
+import { FileText, BookOpen } from 'lucide-react';
 
 interface Note {
   id: string;
@@ -59,16 +59,48 @@ function HomeContent() {
 
   const activeNote = notes.find((n) => n.id === activeNoteId);
 
+  const extractTitle = (html: string): string => {
+    // h1タグから抽出
+    const h1Match = html.match(/<h1>(.*?)<\/h1>/);
+    if (h1Match) return h1Match[1].replace(/<[^>]+>/g, '');
+    
+    // pタグの最初の行から抽出
+    const pMatch = html.match(/<p>(.*?)<\/p>/);
+    if (pMatch) {
+      const text = pMatch[1].replace(/<[^>]+>/g, '');
+      return text.substring(0, 50) || '無題';
+    }
+    
+    return '無題';
+  };
+
   const handleUpdateNote = (content: string) => {
     if (!activeNoteId) return;
+    const title = extractTitle(content);
     setNotes(
       notes.map((n) =>
         n.id === activeNoteId
-          ? { ...n, content, updatedAt: new Date() }
+          ? { ...n, content, title, updatedAt: new Date() }
           : n
       )
     );
   };
+
+  // アクティブノートのタイトルを更新
+  useEffect(() => {
+    if (activeNote) {
+      const title = extractTitle(activeNote.content);
+      if (title !== activeNote.title) {
+        setNotes(
+          notes.map((n) =>
+            n.id === activeNoteId
+              ? { ...n, title }
+              : n
+          )
+        );
+      }
+    }
+  }, [activeNoteId]);
 
   const handleToggleStar = (noteId: string) => {
     setNotes(
@@ -150,11 +182,12 @@ function HomeContent() {
       
       <div className="flex flex-col flex-1 min-w-0">
         <header className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
             {state === 'collapsed' && <SidebarTrigger data-testid="button-sidebar-toggle" />}
-            {activeNote && (
-              <h1 className="text-lg font-semibold truncate">{activeNote.title}</h1>
-            )}
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <span className="font-semibold text-lg">NoteMark</span>
+            </div>
           </div>
           <ThemeToggle />
         </header>

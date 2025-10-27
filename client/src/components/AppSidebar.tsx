@@ -11,6 +11,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { NoteListItem } from './NoteListItem';
 import { FolderItem } from './FolderItem';
@@ -60,6 +61,7 @@ export function AppSidebar({
   onCreateTodayNote,
   onToggleFolder,
 }: AppSidebarProps) {
+  const { state } = useSidebar();
   const [searchQuery, setSearchQuery] = useState('');
   const [starredExpanded, setStarredExpanded] = useState(true);
   const [allNotesExpanded, setAllNotesExpanded] = useState(true);
@@ -147,6 +149,8 @@ export function AppSidebar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {state === 'expanded' && <SidebarTrigger data-testid="button-sidebar-toggle-menu" />}
         </div>
 
         <div className="relative">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { NoteEditor } from '@/components/NoteEditor';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -21,7 +21,8 @@ interface Folder {
   isExpanded: boolean;
 }
 
-export default function Home() {
+function HomeContent() {
+  const { state } = useSidebar();
   const [notes, setNotes] = useState<Note[]>([
     {
       id: '1',
@@ -133,6 +134,54 @@ export default function Home() {
     );
   };
 
+  return (
+    <div className="flex h-screen w-full overflow-hidden">
+      <AppSidebar
+        notes={notes}
+        folders={folders}
+        activeNoteId={activeNoteId}
+        onSelectNote={setActiveNoteId}
+        onToggleStar={handleToggleStar}
+        onCreateNote={handleCreateNote}
+        onCreateFolder={handleCreateFolder}
+        onCreateTodayNote={handleCreateTodayNote}
+        onToggleFolder={handleToggleFolder}
+      />
+      
+      <div className="flex flex-col flex-1 min-w-0">
+        <header className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {state === 'collapsed' && <SidebarTrigger data-testid="button-sidebar-toggle" />}
+            {activeNote && (
+              <h1 className="text-lg font-semibold truncate">{activeNote.title}</h1>
+            )}
+          </div>
+          <ThemeToggle />
+        </header>
+        
+        <main className="flex-1 min-h-0">
+          {activeNote ? (
+            <NoteEditor
+              key={activeNote.id}
+              content={activeNote.content}
+              onChange={handleUpdateNote}
+              placeholder="メモを入力してください..."
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="text-center">
+                <FileText className="h-16 w-16 mx-auto mb-4 opacity-20" />
+                <p>ノートを選択するか、新しいノートを作成してください</p>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default function Home() {
   const style = {
     '--sidebar-width': '20rem',
     '--sidebar-width-icon': '4rem',
@@ -140,49 +189,7 @@ export default function Home() {
 
   return (
     <SidebarProvider defaultOpen={true} style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full overflow-hidden">
-        <AppSidebar
-          notes={notes}
-          folders={folders}
-          activeNoteId={activeNoteId}
-          onSelectNote={setActiveNoteId}
-          onToggleStar={handleToggleStar}
-          onCreateNote={handleCreateNote}
-          onCreateFolder={handleCreateFolder}
-          onCreateTodayNote={handleCreateTodayNote}
-          onToggleFolder={handleToggleFolder}
-        />
-        
-        <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between px-4 py-2 border-b bg-background shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              {activeNote && (
-                <h1 className="text-lg font-semibold truncate">{activeNote.title}</h1>
-              )}
-            </div>
-            <ThemeToggle />
-          </header>
-          
-          <main className="flex-1 min-h-0">
-            {activeNote ? (
-              <NoteEditor
-                key={activeNote.id}
-                content={activeNote.content}
-                onChange={handleUpdateNote}
-                placeholder="メモを入力してください..."
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                <div className="text-center">
-                  <FileText className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                  <p>ノートを選択するか、新しいノートを作成してください</p>
-                </div>
-              </div>
-            )}
-          </main>
-        </div>
-      </div>
+      <HomeContent />
     </SidebarProvider>
   );
 }

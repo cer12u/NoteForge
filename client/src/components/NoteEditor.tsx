@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { marked } from 'marked';
 import { 
   Bold, 
   Italic, 
@@ -16,7 +16,8 @@ import {
   Quote,
   Minus,
   Eye,
-  EyeOff
+  EyeOff,
+  FileEdit
 } from 'lucide-react';
 
 interface NoteEditorProps {
@@ -25,9 +26,18 @@ interface NoteEditorProps {
   placeholder?: string;
 }
 
+type ViewMode = 'edit' | 'preview' | 'hybrid';
+
+// markedの設定
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+});
+
 export function NoteEditor({ content, onChange, placeholder = 'メモを入力...' }: NoteEditorProps) {
-  const [showPreview, setShowPreview] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('hybrid');
   const [markdown, setMarkdown] = useState(content);
+  const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -37,6 +47,18 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
   const handleChange = (value: string) => {
     setMarkdown(value);
     onChange(value);
+  };
+
+  const updateCursorPosition = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      setCursorPosition(textarea.selectionStart);
+    }
+  };
+
+  const getCurrentLineNumber = (text: string, cursorPos: number): number => {
+    const textBeforeCursor = text.substring(0, cursorPos);
+    return textBeforeCursor.split('\n').length - 1;
   };
 
   const insertMarkdown = (before: string, after: string = '') => {
@@ -54,6 +76,7 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
       textarea.focus();
       const newCursorPos = start + before.length + selectedText.length;
       textarea.setSelectionRange(newCursorPos, newCursorPos);
+      updateCursorPosition();
     }, 0);
   };
 
@@ -82,7 +105,101 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(lineStart + newLine.length, lineStart + newLine.length);
+      updateCursorPosition();
     }, 0);
+  };
+
+  const cycleViewMode = () => {
+    if (viewMode === 'edit') {
+      setViewMode('hybrid');
+    } else if (viewMode === 'hybrid') {
+      setViewMode('preview');
+    } else {
+      setViewMode('edit');
+    }
+  };
+
+  // ハイブリッドビュー（Obsidianスタイル）のレンダリング
+  const renderHybridView = () => {
+    const lines = markdown.split('\n');
+    const currentLineNumber = getCurrentLineNumber(markdown, cursorPosition);
+    
+    return (
+      <div className="relative h-full w-full overflow-auto">
+        <div
+          className="p-8 font-mono text-sm leading-relaxed min-h-full"
+          style={{ caretColor: 'auto' }}
+        >
+          {lines.map((line, index) => {
+            const isCursorLine = index === currentLineNumber;
+            
+            return (
+              <div 
+                key={index}
+                className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2' : ''}`}
+                onClick={() => {
+                  if (textareaRef.current) {
+                    const lineStart = lines.slice(0, index).join('\n').length + (index > 0 ? 1 : 0);
+                    textareaRef.current.focus();
+                    textareaRef.current.setSelectionRange(lineStart, lineStart);
+                    updateCursorPosition();
+                  }
+                }}
+              >
+                {isCursorLine ? (
+                  // カーソル行はMarkdownソースを表示
+                  <span className="text-foreground whitespace-pre-wrap">{line || '\u00A0'}</span>
+                ) : (
+                  // 他の行はmarkedでHTMLに変換して表示
+                  <div 
+                    className="prose prose-sm dark:prose-invert inline-block w-full"
+                    dangerouslySetInnerHTML={{ 
+                      __html: line.trim() ? marked.parseInline(line) : '\u00A0'
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* 実際の入力を受け付けるテキストエリア（透明・オーバーレイ） */}
+        <textarea
+          ref={textareaRef}
+          value={markdown}
+          onChange={(e) => handleChange(e.target.value)}
+          onKeyUp={updateCursorPosition}
+          onClick={updateCursorPosition}
+          onSelect={updateCursorPosition}
+          className="absolute inset-0 w-full h-full p-8 font-mono text-sm leading-relaxed resize-none border-0 bg-transparent text-transparent caret-foreground focus-visible:ring-0 focus:outline-none"
+          style={{ caretColor: 'currentColor' }}
+          placeholder={placeholder}
+          data-testid="textarea-markdown-hybrid"
+        />
+      </div>
+    );
+  };
+
+  const getViewModeIcon = () => {
+    switch (viewMode) {
+      case 'edit':
+        return <EyeOff className="h-4 w-4" />;
+      case 'hybrid':
+        return <FileEdit className="h-4 w-4" />;
+      case 'preview':
+        return <Eye className="h-4 w-4" />;
+    }
+  };
+
+  const getViewModeTitle = () => {
+    switch (viewMode) {
+      case 'edit':
+        return '編集モード（装飾OFF）';
+      case 'hybrid':
+        return 'ハイブリッドモード（カーソル行のみMarkdown）';
+      case 'preview':
+        return 'プレビューモード（装飾ON）';
+    }
   };
 
   return (
@@ -191,30 +308,45 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
         <Button
           size="icon"
           variant="ghost"
-          onClick={() => setShowPreview(!showPreview)}
-          className={showPreview ? 'bg-accent' : ''}
-          data-testid="button-toggle-preview"
+          onClick={cycleViewMode}
+          className={viewMode !== 'edit' ? 'bg-accent' : ''}
+          data-testid="button-toggle-view-mode"
+          title={getViewModeTitle()}
         >
-          {showPreview ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          {getViewModeIcon()}
         </Button>
       </div>
       
-      <div className="flex-1 overflow-auto">
-        {showPreview ? (
-          <div className="prose prose-sm max-w-none p-8 leading-snug dark:prose-invert">
+      <div className="flex-1 overflow-hidden relative">
+        {viewMode === 'preview' ? (
+          // 完全プレビューモード（装飾ON）
+          <div 
+            className="prose prose-sm max-w-none p-8 leading-relaxed dark:prose-invert overflow-auto h-full cursor-text"
+            onClick={() => setViewMode('hybrid')}
+            data-testid="preview-container"
+          >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {markdown}
             </ReactMarkdown>
           </div>
+        ) : viewMode === 'hybrid' ? (
+          // ハイブリッドモード（Obsidianスタイル）
+          renderHybridView()
         ) : (
-          <Textarea
-            ref={textareaRef}
-            value={markdown}
-            onChange={(e) => handleChange(e.target.value)}
-            className="h-full w-full resize-none border-0 p-8 font-mono text-sm leading-snug focus-visible:ring-0"
-            placeholder={placeholder}
-            data-testid="textarea-markdown"
-          />
+          // 編集モード（装飾OFF - Markdownソース表示）
+          <div className="h-full overflow-auto">
+            <textarea
+              ref={textareaRef}
+              value={markdown}
+              onChange={(e) => handleChange(e.target.value)}
+              onKeyUp={updateCursorPosition}
+              onClick={updateCursorPosition}
+              onSelect={updateCursorPosition}
+              className="h-full w-full resize-none border-0 p-8 font-mono text-sm leading-relaxed focus-visible:ring-0 bg-background"
+              placeholder={placeholder}
+              data-testid="textarea-markdown"
+            />
+          </div>
         )}
       </div>
     </div>

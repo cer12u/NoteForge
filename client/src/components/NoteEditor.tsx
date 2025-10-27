@@ -126,9 +126,9 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     
     return (
       <div className="relative h-full w-full overflow-auto">
+        {/* 装飾されたコンテンツ（背景層） */}
         <div
-          className="p-8 font-mono text-sm leading-relaxed min-h-full"
-          style={{ caretColor: 'auto' }}
+          className="absolute inset-0 p-8 font-mono text-sm leading-relaxed overflow-auto pointer-events-none"
         >
           {lines.map((line, index) => {
             const isCursorLine = index === currentLineNumber;
@@ -137,18 +137,10 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
               <div 
                 key={index}
                 className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2' : ''}`}
-                onClick={() => {
-                  if (textareaRef.current) {
-                    const lineStart = lines.slice(0, index).join('\n').length + (index > 0 ? 1 : 0);
-                    textareaRef.current.focus();
-                    textareaRef.current.setSelectionRange(lineStart, lineStart);
-                    updateCursorPosition();
-                  }
-                }}
               >
                 {isCursorLine ? (
-                  // カーソル行はMarkdownソースを表示
-                  <span className="text-foreground whitespace-pre-wrap">{line || '\u00A0'}</span>
+                  // カーソル行はMarkdownソースを表示（透明にして見えないようにする）
+                  <span className="text-transparent whitespace-pre-wrap select-none">{line || '\u00A0'}</span>
                 ) : (
                   // 他の行はmarkedでHTMLに変換して表示
                   <div 
@@ -163,7 +155,7 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
           })}
         </div>
         
-        {/* 実際の入力を受け付けるテキストエリア（透明・オーバーレイ） */}
+        {/* 実際の入力を受け付けるテキストエリア（前景層） */}
         <textarea
           ref={textareaRef}
           value={markdown}
@@ -171,8 +163,11 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
           onKeyUp={updateCursorPosition}
           onClick={updateCursorPosition}
           onSelect={updateCursorPosition}
-          className="absolute inset-0 w-full h-full p-8 font-mono text-sm leading-relaxed resize-none border-0 bg-transparent text-transparent caret-foreground focus-visible:ring-0 focus:outline-none"
-          style={{ caretColor: 'currentColor' }}
+          className="relative w-full h-full p-8 font-mono text-sm leading-relaxed resize-none border-0 bg-transparent focus-visible:ring-0 focus:outline-none"
+          style={{ 
+            color: 'transparent',
+            caretColor: 'var(--foreground)',
+          }}
           placeholder={placeholder}
           data-testid="textarea-markdown-hybrid"
         />

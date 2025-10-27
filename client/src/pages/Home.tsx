@@ -27,7 +27,7 @@ function HomeContent() {
     {
       id: '1',
       title: 'ようこそ NoteMark へ',
-      content: '<h1>NoteMark へようこそ</h1><p>これは Obsidian スタイルのマークダウンメモアプリケーションです。</p><h2>主な機能</h2><ul><li>リアルタイムマークダウンプレビュー</li><li>フォルダ管理</li><li>お気に入り機能</li><li>Today ボタンで日次ノート作成</li><li>テンプレート機能</li></ul><p>左側のサイドバーから新しいノートを作成したり、既存のノートを選択できます。</p>',
+      content: '# NoteMark へようこそ\n\nこれは Obsidian スタイルのマークダウンメモアプリケーションです。\n\n## 主な機能\n\n- リアルタイムマークダウンプレビュー\n- フォルダ管理\n- お気に入り機能\n- Today ボタンで日次ノート作成\n- テンプレート機能\n\n左側のサイドバーから新しいノートを作成したり、既存のノートを選択できます。',
       folderId: null,
       isStarred: true,
       updatedAt: new Date(),
@@ -35,7 +35,7 @@ function HomeContent() {
     {
       id: '2',
       title: '会議メモ',
-      content: '<h2>プロジェクト会議</h2><p>本日の議題:</p><ul><li>進捗確認</li><li>次週のタスク</li></ul>',
+      content: '## プロジェクト会議\n\n本日の議題:\n\n- 進捗確認\n- 次週のタスク',
       folderId: 'folder-1',
       isStarred: false,
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
@@ -43,7 +43,7 @@ function HomeContent() {
     {
       id: '3',
       title: 'アイデアメモ',
-      content: '<h1>新機能アイデア</h1><p>将来追加したい機能のリスト</p>',
+      content: '# 新機能アイデア\n\n将来追加したい機能のリスト',
       folderId: null,
       isStarred: true,
       updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
@@ -59,16 +59,15 @@ function HomeContent() {
 
   const activeNote = notes.find((n) => n.id === activeNoteId);
 
-  const extractTitle = (html: string): string => {
-    // h1タグから抽出
-    const h1Match = html.match(/<h1>(.*?)<\/h1>/);
-    if (h1Match) return h1Match[1].replace(/<[^>]+>/g, '');
+  const extractTitle = (markdown: string): string => {
+    // h1から抽出（# で始まる行）
+    const h1Match = markdown.match(/^#\s+(.+)$/m);
+    if (h1Match) return h1Match[1].trim();
     
-    // pタグの最初の行から抽出
-    const pMatch = html.match(/<p>(.*?)<\/p>/);
-    if (pMatch) {
-      const text = pMatch[1].replace(/<[^>]+>/g, '');
-      return text.substring(0, 50) || '無題';
+    // 最初の非空行から抽出
+    const firstLine = markdown.split('\n').find(line => line.trim().length > 0);
+    if (firstLine) {
+      return firstLine.replace(/^#+\s*/, '').substring(0, 50) || '無題';
     }
     
     return '無題';
@@ -149,7 +148,7 @@ function HomeContent() {
     const newNote: Note = {
       id: `note-${Date.now()}`,
       title: today,
-      content: `<h1>${today}</h1><p></p>`,
+      content: `# ${today}\n\n`,
       folderId: null,
       isStarred: false,
       updatedAt: new Date(),

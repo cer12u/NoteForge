@@ -147,8 +147,6 @@ export function AppSidebar({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <SidebarTrigger data-testid="button-sidebar-toggle-menu" />
         </div>
 
         <div className="relative">

@@ -128,7 +128,7 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
       <div className="relative h-full w-full overflow-auto">
         {/* 装飾されたコンテンツ（背景層） */}
         <div
-          className="absolute inset-0 p-8 text-sm leading-relaxed overflow-auto pointer-events-none"
+          className="absolute inset-0 p-8 font-mono text-sm leading-relaxed overflow-auto pointer-events-none"
         >
           {lines.map((line, index) => {
             const isCursorLine = index === currentLineNumber;
@@ -136,17 +136,17 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
             return (
               <div 
                 key={`bg-${index}`}
-                className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2' : ''}`}
+                className={`whitespace-pre-wrap ${isCursorLine ? 'bg-accent/20 px-2 -mx-2' : ''}`}
               >
                 {isCursorLine ? (
                   // カーソル行はMarkdown原文を表示
-                  <span className="whitespace-pre-wrap font-mono text-foreground">{line || '\u00A0'}</span>
+                  <span className="text-foreground">{line || '\u00A0'}</span>
                 ) : (
-                  // 他の行はmarkedでHTMLに変換して表示
-                  <div 
-                    className="prose prose-sm dark:prose-invert prose-headings:my-0 prose-p:my-0 prose-ul:my-0 prose-ol:my-0"
+                  // 他の行はmarkedでHTMLに変換して表示（モノスペースフォント維持）
+                  <span 
+                    className="inline-block w-full"
                     dangerouslySetInnerHTML={{ 
-                      __html: line.trim() ? marked.parse(line) : '<p>\u00A0</p>'
+                      __html: line.trim() ? marked.parseInline(line) : '\u00A0'
                     }}
                   />
                 )}

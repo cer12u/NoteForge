@@ -34,180 +34,6 @@ marked.setOptions({
   gfm: true,
 });
 
-// 軽量Markdownトークナイザー（インライン装飾のみ）
-interface Token {
-  type: 'text' | 'bold' | 'italic' | 'code' | 'strikethrough';
-  text: string;
-  start: number;
-  end: number;
-}
-
-function tokenizeLine(line: string): { tokens: Token[]; isHeading: boolean; isList: boolean } {
-  const tokens: Token[] = [];
-  let pos = 0;
-  let isHeading = false;
-  let isList = false;
-  
-  // 見出し記号を保持
-  const headingMatch = line.match(/^(#{1,6})\s/);
-  if (headingMatch) {
-    isHeading = true;
-    tokens.push({ type: 'text', text: headingMatch[0], start: 0, end: headingMatch[0].length });
-    pos = headingMatch[0].length;
-  }
-  
-  // リスト記号を保持
-  const listMatch = line.match(/^(\s*[-*+]|\s*\d+\.)\s/);
-  if (listMatch && !headingMatch) {
-    isList = true;
-    tokens.push({ type: 'text', text: listMatch[0], start: 0, end: listMatch[0].length });
-    pos = listMatch[0].length;
-  }
-  
-  const remaining = line.slice(pos);
-  if (!remaining) {
-    return { tokens: tokens.length > 0 ? tokens : [{ type: 'text', text: line || '\u00A0', start: 0, end: line.length }], isHeading, isList };
-  }
-  
-  // インライン装飾のパターンをパース
-  const parts: Array<{ text: string; type: Token['type']; start: number }> = [];
-  let currentPos = 0;
-  
-  // 正規表現でインライン要素を検出
-  const inlineRegex = /(\*\*(.+?)\*\*|__(.+?)__|(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)(.+?)(?<!_)_(?!_)|`(.+?)`|~~(.+?)~~)/g;
-  let match;
-  
-  while ((match = inlineRegex.exec(remaining)) !== null) {
-    const matchStart = match.index;
-    const matchText = match[0];
-    
-    // 前のテキスト
-    if (matchStart > currentPos) {
-      parts.push({
-        text: remaining.slice(currentPos, matchStart),
-        type: 'text',
-        start: pos + currentPos
-      });
-    }
-    
-    // マッチした装飾の種類を判定
-    let type: Token['type'] = 'text';
-    if (matchText.startsWith('**') || matchText.startsWith('__')) {
-      type = 'bold';
-    } else if (matchText.startsWith('~~')) {
-      type = 'strikethrough';
-    } else if (matchText.startsWith('`')) {
-      type = 'code';
-    } else if (matchText.startsWith('*') || matchText.startsWith('_')) {
-      type = 'italic';
-    }
-    
-    parts.push({
-      text: matchText,
-      type: type,
-      start: pos + matchStart
-    });
-    
-    currentPos = matchStart + matchText.length;
-  }
-  
-  // 残りのテキスト
-  if (currentPos < remaining.length) {
-    parts.push({
-      text: remaining.slice(currentPos),
-      type: 'text',
-      start: pos + currentPos
-    });
-  }
-  
-  // トークンに変換
-  for (const part of parts) {
-    tokens.push({
-      type: part.type,
-      text: part.text,
-      start: part.start,
-      end: part.start + part.text.length
-    });
-  }
-  
-  return { tokens: tokens.length > 0 ? tokens : [{ type: 'text', text: line || '\u00A0', start: 0, end: line.length }], isHeading, isList };
-}
-
-// トークンをレンダリング（装飾記号を透明化）
-function renderTokens(tokens: Token[], isHeading: boolean, isList: boolean): JSX.Element[] {
-  return tokens.map((token, i) => {
-    // 見出し用のスタイリング
-    if (isHeading) {
-      if (i === 0) {
-        // 見出し記号（# ## ###）は控えめに
-        return <span key={i} className="text-muted-foreground">{token.text}</span>;
-      } else {
-        // 見出し本文は目立つように
-        return <span key={i} className="text-primary font-bold">{token.text}</span>;
-      }
-    }
-    
-    // リスト用のスタイリング（記号のみ）
-    if (isList && i === 0) {
-      return <span key={i} className="text-muted-foreground">{token.text}</span>;
-    }
-    
-    // インライン装飾
-    if (token.type === 'bold') {
-      // **text** -> 記号を透明化、textを太字で表示
-      const match = token.text.match(/^(\*\*|__)(.+?)(\*\*|__)$/);
-      if (match) {
-        return (
-          <span key={i}>
-            <span className="opacity-0">{match[1]}</span>
-            <span className="font-bold">{match[2]}</span>
-            <span className="opacity-0">{match[3]}</span>
-          </span>
-        );
-      }
-    } else if (token.type === 'italic') {
-      // *text* -> 記号を透明化、textを斜体で表示
-      const match = token.text.match(/^(\*|_)(.+?)(\*|_)$/);
-      if (match) {
-        return (
-          <span key={i}>
-            <span className="opacity-0">{match[1]}</span>
-            <span className="italic">{match[2]}</span>
-            <span className="opacity-0">{match[3]}</span>
-          </span>
-        );
-      }
-    } else if (token.type === 'code') {
-      // `text` -> 記号を透明化、textを背景色付きで表示
-      const match = token.text.match(/^`(.+?)`$/);
-      if (match) {
-        return (
-          <span key={i}>
-            <span className="opacity-0">`</span>
-            <span className="bg-muted px-1 rounded">{match[1]}</span>
-            <span className="opacity-0">`</span>
-          </span>
-        );
-      }
-    } else if (token.type === 'strikethrough') {
-      // ~~text~~ -> 記号を透明化、textを打消し線で表示
-      const match = token.text.match(/^~~(.+?)~~$/);
-      if (match) {
-        return (
-          <span key={i}>
-            <span className="opacity-0">~~</span>
-            <span className="line-through opacity-70">{match[1]}</span>
-            <span className="opacity-0">~~</span>
-          </span>
-        );
-      }
-    }
-    
-    // 通常のテキスト
-    return <span key={i}>{token.text}</span>;
-  });
-}
-
 export function NoteEditor({ content, onChange, placeholder = 'メモを入力...' }: NoteEditorProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('hybrid');
   const [markdown, setMarkdown] = useState(content);
@@ -308,9 +134,9 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     
     return (
       <div className="relative h-full w-full overflow-hidden">
-        {/* 装飾されたコンテンツ（背景層） - 等幅フォントで同じ行の高さを維持 */}
+        {/* 装飾されたコンテンツ（背景層） */}
         <div ref={backgroundRef} className="absolute inset-0 overflow-auto pointer-events-none">
-          <pre className="p-8 font-mono text-sm leading-relaxed whitespace-pre-wrap m-0">
+          <div className="p-8 font-mono text-sm leading-relaxed hybrid-markdown">
             {lines.map((line, index) => {
               const isCursorLine = index === currentLineNumber;
               
@@ -321,20 +147,20 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
                 >
                   {isCursorLine ? (
                     // カーソル行はMarkdown原文を表示
-                    <span className="text-foreground">{line || '\u00A0'}</span>
+                    <span className="whitespace-pre-wrap text-foreground">{line || '\u00A0'}</span>
                   ) : (
-                    // 他の行はトークン化して装飾表示（等幅フォント維持）
-                    <span className="text-foreground">
-                      {(() => {
-                        const { tokens, isHeading, isList } = tokenizeLine(line);
-                        return renderTokens(tokens, isHeading, isList);
-                      })()}
-                    </span>
+                    // 他の行はmarkedでHTMLに変換して装飾表示
+                    <div 
+                      className="whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ 
+                        __html: line.trim() ? marked.parse(line) : '<p>\u00A0</p>'
+                      }}
+                    />
                   )}
                 </div>
               );
             })}
-          </pre>
+          </div>
         </div>
         
         {/* 実際の入力を受け付けるテキストエリア（前景層） */}

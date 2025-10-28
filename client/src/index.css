@@ -348,41 +348,4 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
-
-  /* ハイブリッドMarkdownエディタ：すべての要素を等幅フォント・同じサイズに強制 */
-  .hybrid-markdown * {
-    font-family: var(--font-mono) !important;
-    font-size: 0.875rem !important; /* text-sm */
-    line-height: 1.625 !important; /* leading-relaxed */
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .hybrid-markdown p,
-  .hybrid-markdown h1,
-  .hybrid-markdown h2,
-  .hybrid-markdown h3,
-  .hybrid-markdown h4,
-  .hybrid-markdown h5,
-  .hybrid-markdown h6,
-  .hybrid-markdown ul,
-  .hybrid-markdown ol,
-  .hybrid-markdown li {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .hybrid-markdown strong {
-    font-weight: 700 !important;
-  }
-
-  .hybrid-markdown em {
-    font-style: italic !important;
-  }
-
-  .hybrid-markdown code {
-    background-color: hsl(var(--muted)) !important;
-    padding: 0 0.25rem !important;
-    border-radius: 0.25rem !important;
-  }
 }

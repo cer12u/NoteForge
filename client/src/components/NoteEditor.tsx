@@ -39,7 +39,6 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
   const [markdown, setMarkdown] = useState(content);
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const backgroundRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMarkdown(content);
@@ -54,13 +53,6 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     const textarea = textareaRef.current;
     if (textarea) {
       setCursorPosition(textarea.selectionStart);
-    }
-  };
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (backgroundRef.current && e.currentTarget) {
-      backgroundRef.current.scrollTop = e.currentTarget.scrollTop;
-      backgroundRef.current.scrollLeft = e.currentTarget.scrollLeft;
     }
   };
 
@@ -133,54 +125,52 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     const currentLineNumber = getCurrentLineNumber(markdown, cursorPosition);
     
     return (
-      <div className="relative h-full w-full overflow-hidden">
+      <div className="relative h-full w-full overflow-auto">
         {/* 装飾されたコンテンツ（背景層） */}
-        <div ref={backgroundRef} className="absolute inset-0 overflow-auto pointer-events-none">
-          <div className="p-8 font-mono text-sm leading-relaxed hybrid-markdown">
-            {lines.map((line, index) => {
-              const isCursorLine = index === currentLineNumber;
-              
-              return (
-                <div 
-                  key={`bg-${index}`}
-                  className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2 rounded' : ''}`}
-                >
-                  {isCursorLine ? (
-                    // カーソル行はMarkdown原文を表示
-                    <span className="whitespace-pre-wrap text-foreground">{line || '\u00A0'}</span>
-                  ) : (
-                    // 他の行はmarkedでHTMLに変換して装飾表示
-                    <div 
-                      className="whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ 
-                        __html: line.trim() ? marked.parse(line) : '<p>\u00A0</p>'
-                      }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        <div
+          className="absolute inset-0 p-8 text-sm leading-relaxed overflow-auto pointer-events-none"
+        >
+          {lines.map((line, index) => {
+            const isCursorLine = index === currentLineNumber;
+            
+            return (
+              <div 
+                key={`bg-${index}`}
+                className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2' : ''}`}
+              >
+                {isCursorLine ? (
+                  // カーソル行はMarkdown原文を表示
+                  <span className="whitespace-pre-wrap font-mono text-foreground">{line || '\u00A0'}</span>
+                ) : (
+                  // 他の行はmarkedでHTMLに変換して表示
+                  <div 
+                    className="prose prose-sm dark:prose-invert prose-headings:my-0 prose-p:my-0 prose-ul:my-0 prose-ol:my-0"
+                    dangerouslySetInnerHTML={{ 
+                      __html: line.trim() ? marked.parse(line) : '<p>\u00A0</p>'
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
         
         {/* 実際の入力を受け付けるテキストエリア（前景層） */}
-        <div className="absolute inset-0 overflow-auto" onScroll={handleScroll}>
-          <textarea
-            ref={textareaRef}
-            value={markdown}
-            onChange={(e) => handleChange(e.target.value)}
-            onKeyUp={updateCursorPosition}
-            onClick={updateCursorPosition}
-            onSelect={updateCursorPosition}
-            className="w-full min-h-full p-8 font-mono text-sm leading-relaxed resize-none border-0 bg-transparent focus-visible:ring-0 focus:outline-none"
-            style={{ 
-              color: 'transparent',
-              caretColor: 'var(--foreground)',
-            }}
-            placeholder={placeholder}
-            data-testid="textarea-markdown-hybrid"
-          />
-        </div>
+        <textarea
+          ref={textareaRef}
+          value={markdown}
+          onChange={(e) => handleChange(e.target.value)}
+          onKeyUp={updateCursorPosition}
+          onClick={updateCursorPosition}
+          onSelect={updateCursorPosition}
+          className="relative w-full h-full p-8 font-mono text-sm leading-relaxed resize-none border-0 bg-transparent focus-visible:ring-0 focus:outline-none"
+          style={{ 
+            color: 'transparent',
+            caretColor: 'var(--foreground)',
+          }}
+          placeholder={placeholder}
+          data-testid="textarea-markdown-hybrid"
+        />
       </div>
     );
   };

@@ -4,22 +4,31 @@
 
 NoteMark is an Obsidian-style markdown note-taking application built with React and Express. The application provides a distraction-free, productivity-focused interface for creating, organizing, and managing markdown notes with features like folder organization, favorites, and real-time preview capabilities.
 
-## Recent Changes (October 27, 2025)
+## Recent Changes (October 28, 2025)
 
-**Markdown Native Implementation**
+**Cursor Alignment Fix in Hybrid Mode**
+- Fixed cursor position misalignment issue in hybrid mode by replacing `marked.parse()` with a lightweight token-based renderer
+- Implemented custom Markdown tokenizer that preserves fixed line metrics:
+  - Detects inline decorations: bold (`**text**`), italic (`*text*`), code (`` `text` ``), strikethrough (`~~text~~`)
+  - Detects heading markers (`# ## ###`) and list markers (`- * 1.`)
+  - Maintains equal-width font (`font-mono`) and consistent line height across all rendering
+- Updated rendering strategy:
+  - Background layer: `<pre>` element with tokenized inline decorations (no font-size changes)
+  - Foreground layer: Transparent textarea with same font and line height
+  - Both layers now perfectly aligned with no cursor position drift
+- Heading styling without font-size changes:
+  - Heading markers (#, ##, ###): subtle gray color (`text-muted-foreground`)
+  - Heading content: bold + primary color (`text-primary font-bold`)
+  - Visually distinct from paragraphs while maintaining alignment
+- List styling: markers shown in subtle gray, content remains normal weight
+- Added scroll synchronization between background and foreground layers
+- Verified with e2e tests: cursor position remains accurate across headings, lists, code blocks, long paragraphs, and blank lines
+
+**Previous Changes (October 27, 2025)**
 - Switched from HTML storage to native Markdown storage to preserve original Markdown syntax
-- Implemented three view modes:
-  1. **Edit Mode**: Full Markdown source view in textarea
-  2. **Hybrid Mode (Obsidian-style)**: Cursor line shows Markdown source (e.g., `**bold**`), other lines show formatted preview (e.g., **bold**)
-  3. **Preview Mode**: Full formatted Markdown preview (read-only)
-- Hybrid mode implementation:
-  - Background layer: Displays formatted Markdown using `marked.parse()` for non-cursor lines, raw Markdown for cursor line
-  - Foreground layer: Transparent textarea overlays background for input
-  - Cursor line highlighted with accent background
-- Used `marked` library for full Markdown parsing in hybrid mode (supports headings, lists, bold, italic, etc.)
+- Implemented three view modes: Edit, Hybrid (Obsidian-style), and Preview
 - Used `react-markdown` with `remark-gfm` for preview mode rendering
 - Toolbar button cycles through all three modes (Edit → Hybrid → Preview → Edit)
-- Removed unwanted click behavior from preview mode
 
 ## User Preferences
 

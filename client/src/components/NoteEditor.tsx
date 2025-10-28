@@ -133,43 +133,78 @@ function tokenizeLine(line: string): { tokens: Token[]; isHeading: boolean; isLi
   return { tokens: tokens.length > 0 ? tokens : [{ type: 'text', text: line || '\u00A0', start: 0, end: line.length }], isHeading, isList };
 }
 
-// トークンをレンダリング（装飾記号はそのまま表示）
+// トークンをレンダリング（装飾記号を透明化）
 function renderTokens(tokens: Token[], isHeading: boolean, isList: boolean): JSX.Element[] {
   return tokens.map((token, i) => {
-    let className = '';
-    const displayText = token.text; // 装飾記号を削除しない
-    
-    if (token.type === 'bold') {
-      className = 'font-bold';
-    } else if (token.type === 'italic') {
-      className = 'italic';
-    } else if (token.type === 'code') {
-      className = 'bg-muted px-1 rounded';
-    } else if (token.type === 'strikethrough') {
-      className = 'line-through opacity-70';
-    }
-    
-    // 見出し用のスタイリング（全トークンに適用）
+    // 見出し用のスタイリング
     if (isHeading) {
       if (i === 0) {
         // 見出し記号（# ## ###）は控えめに
-        className += ' text-muted-foreground';
+        return <span key={i} className="text-muted-foreground">{token.text}</span>;
       } else {
         // 見出し本文は目立つように
-        className += ' text-primary font-bold';
+        return <span key={i} className="text-primary font-bold">{token.text}</span>;
       }
     }
     
     // リスト用のスタイリング（記号のみ）
     if (isList && i === 0) {
-      className += ' text-muted-foreground';
+      return <span key={i} className="text-muted-foreground">{token.text}</span>;
     }
     
-    return className ? (
-      <span key={i} className={className}>{displayText}</span>
-    ) : (
-      <span key={i}>{displayText}</span>
-    );
+    // インライン装飾
+    if (token.type === 'bold') {
+      // **text** -> 記号を透明化、textを太字で表示
+      const match = token.text.match(/^(\*\*|__)(.+?)(\*\*|__)$/);
+      if (match) {
+        return (
+          <span key={i}>
+            <span className="opacity-0">{match[1]}</span>
+            <span className="font-bold">{match[2]}</span>
+            <span className="opacity-0">{match[3]}</span>
+          </span>
+        );
+      }
+    } else if (token.type === 'italic') {
+      // *text* -> 記号を透明化、textを斜体で表示
+      const match = token.text.match(/^(\*|_)(.+?)(\*|_)$/);
+      if (match) {
+        return (
+          <span key={i}>
+            <span className="opacity-0">{match[1]}</span>
+            <span className="italic">{match[2]}</span>
+            <span className="opacity-0">{match[3]}</span>
+          </span>
+        );
+      }
+    } else if (token.type === 'code') {
+      // `text` -> 記号を透明化、textを背景色付きで表示
+      const match = token.text.match(/^`(.+?)`$/);
+      if (match) {
+        return (
+          <span key={i}>
+            <span className="opacity-0">`</span>
+            <span className="bg-muted px-1 rounded">{match[1]}</span>
+            <span className="opacity-0">`</span>
+          </span>
+        );
+      }
+    } else if (token.type === 'strikethrough') {
+      // ~~text~~ -> 記号を透明化、textを打消し線で表示
+      const match = token.text.match(/^~~(.+?)~~$/);
+      if (match) {
+        return (
+          <span key={i}>
+            <span className="opacity-0">~~</span>
+            <span className="line-through opacity-70">{match[1]}</span>
+            <span className="opacity-0">~~</span>
+          </span>
+        );
+      }
+    }
+    
+    // 通常のテキスト
+    return <span key={i}>{token.text}</span>;
   });
 }
 

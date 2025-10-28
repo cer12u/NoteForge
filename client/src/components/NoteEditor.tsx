@@ -133,24 +133,20 @@ function tokenizeLine(line: string): { tokens: Token[]; isHeading: boolean; isLi
   return { tokens: tokens.length > 0 ? tokens : [{ type: 'text', text: line || '\u00A0', start: 0, end: line.length }], isHeading, isList };
 }
 
-// トークンをレンダリング
+// トークンをレンダリング（装飾記号はそのまま表示）
 function renderTokens(tokens: Token[], isHeading: boolean, isList: boolean): JSX.Element[] {
   return tokens.map((token, i) => {
     let className = '';
-    let displayText = token.text;
+    const displayText = token.text; // 装飾記号を削除しない
     
     if (token.type === 'bold') {
       className = 'font-bold';
-      displayText = token.text.replace(/^\*\*|\*\*$/g, '').replace(/^__|__$/g, '');
     } else if (token.type === 'italic') {
       className = 'italic';
-      displayText = token.text.replace(/^\*(?!\*)|\*(?<!\*)$/g, '').replace(/^_(?!_)|_(?<!_)$/g, '');
     } else if (token.type === 'code') {
-      className = 'bg-muted px-1 rounded text-sm';
-      displayText = token.text.replace(/^`|`$/g, '');
+      className = 'bg-muted px-1 rounded';
     } else if (token.type === 'strikethrough') {
       className = 'line-through opacity-70';
-      displayText = token.text.replace(/^~~|~~$/g, '');
     }
     
     // 見出し用のスタイリング（全トークンに適用）

@@ -34,11 +34,155 @@ marked.setOptions({
   gfm: true,
 });
 
+// 軽量Markdownトークナイザー（インライン装飾のみ）
+interface Token {
+  type: 'text' | 'bold' | 'italic' | 'code' | 'strikethrough';
+  text: string;
+  start: number;
+  end: number;
+}
+
+function tokenizeLine(line: string): { tokens: Token[]; isHeading: boolean; isList: boolean } {
+  const tokens: Token[] = [];
+  let pos = 0;
+  let isHeading = false;
+  let isList = false;
+  
+  // 見出し記号を保持
+  const headingMatch = line.match(/^(#{1,6})\s/);
+  if (headingMatch) {
+    isHeading = true;
+    tokens.push({ type: 'text', text: headingMatch[0], start: 0, end: headingMatch[0].length });
+    pos = headingMatch[0].length;
+  }
+  
+  // リスト記号を保持
+  const listMatch = line.match(/^(\s*[-*+]|\s*\d+\.)\s/);
+  if (listMatch && !headingMatch) {
+    isList = true;
+    tokens.push({ type: 'text', text: listMatch[0], start: 0, end: listMatch[0].length });
+    pos = listMatch[0].length;
+  }
+  
+  const remaining = line.slice(pos);
+  if (!remaining) {
+    return { tokens: tokens.length > 0 ? tokens : [{ type: 'text', text: line || '\u00A0', start: 0, end: line.length }], isHeading, isList };
+  }
+  
+  // インライン装飾のパターンをパース
+  const parts: Array<{ text: string; type: Token['type']; start: number }> = [];
+  let currentPos = 0;
+  
+  // 正規表現でインライン要素を検出
+  const inlineRegex = /(\*\*(.+?)\*\*|__(.+?)__|(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)(.+?)(?<!_)_(?!_)|`(.+?)`|~~(.+?)~~)/g;
+  let match;
+  
+  while ((match = inlineRegex.exec(remaining)) !== null) {
+    const matchStart = match.index;
+    const matchText = match[0];
+    
+    // 前のテキスト
+    if (matchStart > currentPos) {
+      parts.push({
+        text: remaining.slice(currentPos, matchStart),
+        type: 'text',
+        start: pos + currentPos
+      });
+    }
+    
+    // マッチした装飾の種類を判定
+    let type: Token['type'] = 'text';
+    if (matchText.startsWith('**') || matchText.startsWith('__')) {
+      type = 'bold';
+    } else if (matchText.startsWith('~~')) {
+      type = 'strikethrough';
+    } else if (matchText.startsWith('`')) {
+      type = 'code';
+    } else if (matchText.startsWith('*') || matchText.startsWith('_')) {
+      type = 'italic';
+    }
+    
+    parts.push({
+      text: matchText,
+      type: type,
+      start: pos + matchStart
+    });
+    
+    currentPos = matchStart + matchText.length;
+  }
+  
+  // 残りのテキスト
+  if (currentPos < remaining.length) {
+    parts.push({
+      text: remaining.slice(currentPos),
+      type: 'text',
+      start: pos + currentPos
+    });
+  }
+  
+  // トークンに変換
+  for (const part of parts) {
+    tokens.push({
+      type: part.type,
+      text: part.text,
+      start: part.start,
+      end: part.start + part.text.length
+    });
+  }
+  
+  return { tokens: tokens.length > 0 ? tokens : [{ type: 'text', text: line || '\u00A0', start: 0, end: line.length }], isHeading, isList };
+}
+
+// トークンをレンダリング
+function renderTokens(tokens: Token[], isHeading: boolean, isList: boolean): JSX.Element[] {
+  return tokens.map((token, i) => {
+    let className = '';
+    let displayText = token.text;
+    
+    if (token.type === 'bold') {
+      className = 'font-bold';
+      displayText = token.text.replace(/^\*\*|\*\*$/g, '').replace(/^__|__$/g, '');
+    } else if (token.type === 'italic') {
+      className = 'italic';
+      displayText = token.text.replace(/^\*(?!\*)|\*(?<!\*)$/g, '').replace(/^_(?!_)|_(?<!_)$/g, '');
+    } else if (token.type === 'code') {
+      className = 'bg-muted px-1 rounded text-sm';
+      displayText = token.text.replace(/^`|`$/g, '');
+    } else if (token.type === 'strikethrough') {
+      className = 'line-through opacity-70';
+      displayText = token.text.replace(/^~~|~~$/g, '');
+    }
+    
+    // 見出し用のスタイリング（全トークンに適用）
+    if (isHeading) {
+      if (i === 0) {
+        // 見出し記号（# ## ###）は控えめに
+        className += ' text-muted-foreground';
+      } else {
+        // 見出し本文は目立つように
+        className += ' text-primary font-bold';
+      }
+    }
+    
+    // リスト用のスタイリング（記号のみ）
+    if (isList && i === 0) {
+      className += ' text-muted-foreground';
+    }
+    
+    return className ? (
+      <span key={i} className={className}>{displayText}</span>
+    ) : (
+      <span key={i}>{displayText}</span>
+    );
+  });
+}
+
 export function NoteEditor({ content, onChange, placeholder = 'メモを入力...' }: NoteEditorProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('hybrid');
   const [markdown, setMarkdown] = useState(content);
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMarkdown(content);
@@ -53,6 +197,13 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     const textarea = textareaRef.current;
     if (textarea) {
       setCursorPosition(textarea.selectionStart);
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (backgroundRef.current && e.currentTarget) {
+      backgroundRef.current.scrollTop = e.currentTarget.scrollTop;
+      backgroundRef.current.scrollLeft = e.currentTarget.scrollLeft;
     }
   };
 
@@ -125,52 +276,54 @@ export function NoteEditor({ content, onChange, placeholder = 'メモを入力..
     const currentLineNumber = getCurrentLineNumber(markdown, cursorPosition);
     
     return (
-      <div className="relative h-full w-full overflow-auto">
-        {/* 装飾されたコンテンツ（背景層） */}
-        <div
-          className="absolute inset-0 p-8 text-sm leading-relaxed overflow-auto pointer-events-none"
-        >
-          {lines.map((line, index) => {
-            const isCursorLine = index === currentLineNumber;
-            
-            return (
-              <div 
-                key={`bg-${index}`}
-                className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2' : ''}`}
-              >
-                {isCursorLine ? (
-                  // カーソル行はMarkdown原文を表示
-                  <span className="whitespace-pre-wrap font-mono text-foreground">{line || '\u00A0'}</span>
-                ) : (
-                  // 他の行はmarkedでHTMLに変換して表示
-                  <div 
-                    className="prose prose-sm dark:prose-invert prose-headings:my-0 prose-p:my-0 prose-ul:my-0 prose-ol:my-0"
-                    dangerouslySetInnerHTML={{ 
-                      __html: line.trim() ? marked.parse(line) : '<p>\u00A0</p>'
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
+      <div className="relative h-full w-full overflow-hidden">
+        {/* 装飾されたコンテンツ（背景層） - 等幅フォントで同じ行の高さを維持 */}
+        <div ref={backgroundRef} className="absolute inset-0 overflow-auto pointer-events-none">
+          <pre className="p-8 font-mono text-sm leading-relaxed whitespace-pre-wrap m-0">
+            {lines.map((line, index) => {
+              const isCursorLine = index === currentLineNumber;
+              
+              return (
+                <div 
+                  key={`bg-${index}`}
+                  className={`min-h-[1.5rem] ${isCursorLine ? 'bg-accent/20 px-2 -mx-2 rounded' : ''}`}
+                >
+                  {isCursorLine ? (
+                    // カーソル行はMarkdown原文を表示
+                    <span className="text-foreground">{line || '\u00A0'}</span>
+                  ) : (
+                    // 他の行はトークン化して装飾表示（等幅フォント維持）
+                    <span className="text-foreground">
+                      {(() => {
+                        const { tokens, isHeading, isList } = tokenizeLine(line);
+                        return renderTokens(tokens, isHeading, isList);
+                      })()}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </pre>
         </div>
         
         {/* 実際の入力を受け付けるテキストエリア（前景層） */}
-        <textarea
-          ref={textareaRef}
-          value={markdown}
-          onChange={(e) => handleChange(e.target.value)}
-          onKeyUp={updateCursorPosition}
-          onClick={updateCursorPosition}
-          onSelect={updateCursorPosition}
-          className="relative w-full h-full p-8 font-mono text-sm leading-relaxed resize-none border-0 bg-transparent focus-visible:ring-0 focus:outline-none"
-          style={{ 
-            color: 'transparent',
-            caretColor: 'var(--foreground)',
-          }}
-          placeholder={placeholder}
-          data-testid="textarea-markdown-hybrid"
-        />
+        <div className="absolute inset-0 overflow-auto" onScroll={handleScroll}>
+          <textarea
+            ref={textareaRef}
+            value={markdown}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyUp={updateCursorPosition}
+            onClick={updateCursorPosition}
+            onSelect={updateCursorPosition}
+            className="w-full min-h-full p-8 font-mono text-sm leading-relaxed resize-none border-0 bg-transparent focus-visible:ring-0 focus:outline-none"
+            style={{ 
+              color: 'transparent',
+              caretColor: 'var(--foreground)',
+            }}
+            placeholder={placeholder}
+            data-testid="textarea-markdown-hybrid"
+          />
+        </div>
       </div>
     );
   };
